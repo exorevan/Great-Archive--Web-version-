@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+	<style>
+		body { background-image: url(images/bkgd<?php $bkdg_number = rand(1, 11); echo $bkdg_number?>.jpg); }
+	</style>
+	<?php
+		$login = $_POST["login"];
+		$email = $_POST["email"];
+		$password = $_POST["password"];
+	?>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body class="ground">
+		<p>
+		<h2>Ваши данные:</h2>
+		<?php
+		error_reporting(E_ERROR | E_PARSE);
+		$dbconn = pg_connect("host=localhost port=5432 dbname=comicsdb user=postgres password=qwerty1245");
+		if (!$dbconn) {
+			echo "Произошла ошибка.\n";
+			exit;
+		}
+		
+		if ($login == "" or $email == "" or password == "") {
+			echo "Вы забыли ввести значение!";
+			exit;
+		}
+		
+		$result = pg_query($dbconn, "SELECT * FROM users WHERE nickname LIKE '" . $login . "' OR email like '" . $email . "'");
+		$row = pg_fetch_row($result);
+		
+		if (!$row) {
+			echo "<p>Вы успешно зарегестрировались.\n";
+		
+			$date_query = pg_query($dbconn, "SELECT CURRENT_DATE");
+			$current_date = pg_fetch_row($date_query);
+			
+			do {			
+				$rand_id = rand(1, 10000000000);
+				$check_new_key = pg_query($dbconn, "SELECT * FROM users WHERE user_key LIKE '" . $rand_id . "'");
+				$is_key_free = pg_fetch_row($check_new_key);
+			} while ($is_key_free);
+			
+			$users_query = pg_query($dbconn, "SELECT COUNT(*) FROM users");
+			$users_count = pg_fetch_row($users_query);
+			
+			$registration_result = pg_query($dbconn, "insert into users
+			(nickname, email, password, link, avatar_link, role, registration_date, level, user_key)
+			values ('" . $login . "', '" . $email . "', '" . $password . "', 'user0" . $users_count[0] . "', NULL, NULL,
+			'" . $current_date[0] . "', 1, '" . $rand_id . "')");
+			$registration_answer = pg_fetch_row($registration_result);
+			
+			echo "<p>$registration_answer";
+			header('Location: http://localhost/main/account//authorization.html');
+		} else{
+			if ($row[1] == $login) {
+				echo "<p>Ваш никнейм: $row[1] уже занят";
+			}
+			if ($row[2] == $email) {
+				echo "<p>Ваш email: $row[2] уже занят";
+			}
+		}
+		
+		if($login == "qwerty"){
+		?>
+			<div>(придумайте логин оригинальнее)</div>
+		<?php
+		}
+		?>
+		</p>
+	</body>
+</html>
+

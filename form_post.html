@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+	<?php
+		$login = $_POST["login"];
+		$Name = $_POST["Name"];
+		$Surname = $_POST["Surname"];
+		$Fathername = $_POST["Fathername"];
+		$password = $_POST["Password"];
+	?>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body class="ground">
+		<p>
+		<h2>Ваши данные:</h2>
+		<?php
+		echo "<p>name: $Name";
+		echo "<p>login: $login";
+		if($login == $Name){
+		?>
+			<div>(придумайте логин оригинальнее)</div>
+		<?php
+		}
+		?>
+		</p>
+	</body>
+</html>

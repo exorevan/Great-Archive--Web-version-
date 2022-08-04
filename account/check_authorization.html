@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+	<?php
+		$login = $_POST["login"];
+		$password = $_POST["Password"];
+	?>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body class="ground">
+		<p>
+		<h2>Ваши данные:</h2>
+		<?php
+		$dbconn = pg_connect("host=localhost port=5432 dbname=comicsdb user=postgres password=qwerty1245");
+		if (!$dbconn) {
+			echo "Произошла ошибка.\n";
+			exit;
+		}
+		
+		$result = pg_query($dbconn, "SELECT nickname, email, level
+		FROM users
+		WHERE nickname like '" . $login . "'
+		AND password like '" . $password . "'");
+		$row = pg_fetch_row($result);
+		
+		if (!$row) {
+			echo "Данный пользователь не найден.\n";
+			exit;
+		}
+		echo "<p>Ваш никнейм: $row[0]";
+		echo "<p>Ваш email: $row[1]";
+		echo "<p>Ваш lvl: $row[2]";
+		
+		if($login == "qwerty"){
+		?>
+			<div>(придумайте логин оригинальнее)</div>
+		<?php
+		}
+		?>
+		</p>
+	</body>
+</html>
+

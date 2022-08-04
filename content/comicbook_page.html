@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+	<?php
+		error_reporting(E_ERROR | E_PARSE);
+		$dbconn = pg_connect("host=localhost port=5432 dbname=comicsdb user=postgres password=qwerty1245");
+		if (!$dbconn) {
+			echo "Произошла ошибка.\n";
+			exit;
+		}
+		$user_key = $_POST["user_key"];
+		$comicbook_id = $_POST["comicbook_id"];
+		
+		if (isset($_POST['change_rate'])) {
+			$select = "select id from users where user_key = '" . $user_key . "'";
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			$user_id = $row[0];
+		
+			$select = "select count(*) from rates_cb
+						inner join users on users.id=rates_cb.user_id
+						where users.user_key = '" . $user_key . "'
+						and rates_cb.comicbook=" . $comicbook_id;
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			$new_rate = $_POST['rate'];
+			
+			if ($row[0] == 0) {
+				$select = "insert into rates_cb (user_id, comicbook, rate) values (" . $user_id . ", " . $comicbook_id . ", " . $new_rate . ")";
+			} else {
+				$select = "update rates_cb set rate = " . $new_rate . " from users
+					where users.user_key = '". $user_key . "'
+					and rates_cb.user_id = users.id
+					and rates_cb.comicbook = " . $comicbook_id;
+			}
+			
+			$result = pg_query($dbconn, $select);
+		}
+		
+		if (isset($_POST['review'])) {
+			$review = $_POST['review'];
+			$select = "select volume from comics where id=" . $comicbook_id;
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			
+			$select = "select rates_vl.id from rates_vl
+						inner join users on users.id=rates_vl.user_id
+						where rates_vl.volume=" . $row[0] . "
+						and users.user_key='" . $user_key . "'";
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			$select = "insert into reviews (rate, review)
+			values (" . $row[0] . ", '" . $review . "')";
+			$result = pg_query($dbconn, $select);
+		}
+	?>
+	<style>
+	body { background-image: url(images/bkgd<?php $bkdg_number = rand(1, 11); echo $bkdg_number?>.jpg); }
+	.menu {
+		margin: 5px;
+		padding: 5px;
+		display: inline-block;
+		border: 1px solid #900000;
+		box-sizing: border-box;
+	}
+	.stroke {
+		font-size: 18px;
+		background-color: #E5ECEB55;
+	}
+	.title {
+		text-shadow: white 1px 1px 2px, white 2px 2px 2px, white 3px 3px 2px;
+	}
+	.classic {
+		display: block;
+	}
+	.rate {
+		font-size: 30pt;
+		vertical-align: top;
+		font-weight: bold
+	}
+	.desc {
+		font-size: 18pt;
+		background-color: #E5ECEB55;
+		display: table;
+		margin: 0 auto;
+	}
+	.names {
+		font-size: 18pt;
+		background-color: #E5ECEB55;
+		display: table;
+	}
+	.buttons {
+		font-size: 20pt;
+		background: transparent;
+		border: none;
+		padding: 9px;
+		font-family: "Times new Roman";
+		margin: 1.5%
+	}
+	.block {
+		display: flex;
+		flex-wrap: wrap;
+		padding: 20px;
+	}
+	.publisher {
+		font-size: 30pt;
+		background: transparent;
+		border: none;
+		padding: 9px;
+		font-family: "Times new Roman";
+		margin: 1.5%;
+		text-shadow: white 1px 1px 2px, white 2px 2px 2px, white 3px 3px 2px;
+		font-weight: bold
+	}
+	</style>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body class="ground">
+		<p>
+		<ul class="menu"> 
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Издательства</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from publishers" ?>">
+			</form>
+		</ul>
+		<ul class="menu"> 
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Линейки</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from titles" ?>">
+			</form>
+		</ul>
+		<ul class="menu"> 
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Комиксы</button>
+			  <input type="hidden" name='user_key' value="<?php echo "$user_key" ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from comics" ?>">
+			</form>
+		</ul>
+		<ul class="menu">			
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Теги</button>
+			  <input type="hidden" name='user_key' value="<?php echo "$user_key" ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from tags" ?>">
+			</form>
+		</ul>
+		<ul class="menu">			
+			<form action="http://localhost/main/account//user_page.html" method=POST>
+			  <button type="submit">Профиль</button>
+			  <input type="hidden" name='user_key' value="<?php echo "$user_key" ?>">
+			</form>
+		</ul>
+		<ul class="menu" style="float: right;">			
+			<form action="http://localhost/main/account//authorization.html" method=POST>
+			  <button type="submit">Выйти</button>
+			</form>
+		</ul>
+		
+		<?php
+			$select = "select comics.id, titles.name, volumes.name, comics.name, comics.rate, comics.description, publishers.name,
+			people.name, people.lname, people.id, publishers.id
+				from ((((comics
+				inner join volumes
+				on volumes.id=comics.volume)
+				inner join titles
+				on titles.id=volumes.title)
+				inner join publishers
+				on publishers.id=titles.publisher)
+				inner join creators
+				on creators.comicbook=comics.id)
+				inner join people
+				on people.id=creators.people_id
+				where comics.id=" . $comicbook_id;
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+		
+		?>
+		</p>
+		<table width="100%" cellspasing="0" cellpadding="20">
+			<tr>
+				<td width=1000 valign="top">
+				<table width="100%" cellspasing="0">
+					<tr>
+						<td width=700 valign="top">
+							<h1 valign="top" align="left" class="title"><?php echo "$row[1]"?> том <?php echo"$row[2]"?> #<?php echo"$row[3]"?></h1>
+						</td>
+						<td valign="top">
+							<form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 6px">
+								<button type="submit" class="publisher"> <?php echo "$row[6]" ?></button>
+								<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+								<input type="hidden" name='select' value="select titles with publisher" />
+								<input type="hidden" name='publisher_id' value="<?php echo $row[10] ?>" />
+							</form>
+						</td>
+					</tr>
+				</table>
+					<p class="stroke"><?php echo $row[5] ?></p>
+				</td>
+				<td valign="top">
+					<p class="rate" align="center"><?php $new_select = "select avg(rate), count(rate) from rates_cb
+																			where comicbook=" . $comicbook_id;
+															$new_result = pg_query($dbconn, $new_select); 
+															$new_row = pg_fetch_row($new_result);
+															echo round($new_row[0], 2) . "&nbsp(" .$new_row[1] . " оценили)"?></p>
+					<p align="center" class="desc">Над комиксом работали:</p>
+					
+					<table width="100%" cellspasing="0" cellpadding="10">
+						<tr>
+							<td>
+								<p align="left" class="names">Сценарист:</p>
+								<p align="left" class="names">Художник:</p>
+								<p align="left" class="names">Тушь:</p>
+								<p align="left" class="names">Колорист:</p>
+							</td>
+							<td>
+								<form action="http://localhost/main/lists/lists_view.html" method=POST align="right">
+									<button type="submit" class="buttons"> <?php echo $row[7] . "&nbsp" . $row[8] ?></button>
+									<input type="hidden" name='user_key' value="<?php echo "$user_key" ?>" /> 
+									<input type="hidden" name='select' value="<?php echo "select comics with person" ?>" />
+									<input type="hidden" name='person_tag' value="<?php echo "$row[9]" ?>" />
+								</form>
+								<form action="http://localhost/main/lists/lists_view.html" method=POST align="right">
+									<button type="submit" class="buttons"><?php $row = pg_fetch_row($result); echo "$row[7] $row[8]" ?></button>
+									<input type="hidden" name='user_key' value="<?php echo "$user_key" ?>" /> 
+									<input type="hidden" name='select' value="<?php echo "select comics with person" ?>" />
+									<input type="hidden" name='person_tag' value="<?php echo "$row[9]" ?>" />
+								</form>
+								<form action="http://localhost/main/lists/lists_view.html" method=POST align="right">
+									<button type="submit" class="buttons"><?php $row = pg_fetch_row($result); echo "$row[7] $row[8]" ?></button>
+									<input type="hidden" name='user_key' value="<?php echo "$user_key" ?>" /> 
+									<input type="hidden" name='select' value="<?php echo "select comics with person" ?>" />
+									<input type="hidden" name='person_tag' value="<?php echo "$row[9]" ?>" />
+								</form>
+								<form action="http://localhost/main/lists/lists_view.html" method=POST align="right">
+									<button type="submit" class="buttons"><?php $row = pg_fetch_row($result); echo "$row[7] $row[8]" ?></button>
+									<input type="hidden" name='user_key' value="<?php echo "$user_key" ?>" /> 
+									<input type="hidden" name='select' value="<?php echo "select comics with person" ?>" />
+									<input type="hidden" name='person_tag' value="<?php echo "$row[9]" ?>" />
+								</form>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		<table width="100%" cellspasing="0" cellpadding="20">
+			<tr>
+				<td width="650">
+					<table>
+						<tr>
+							<td width=200 valign="top">
+								<p align="left" class="names">Ваша оценка:</p>
+								
+								<form action="http://localhost/main/content/reader.html" method=POST style="padding: 3px;">
+									<button type="submit">Читать онлайн</button>
+									<input type="hidden" name='page' value="1" /> 
+									<input type="hidden" name='comicbook_id' value="<?php echo "$comicbook_id" ?>" />
+								</form>
+								
+								<form action="http://localhost/main/content/comicbook_reviews.html" method=POST style="padding: 3px;">
+									<button type="submit">Рецензии</button>
+									<input type="hidden" name='user_key' value="<?php echo $user_key ?>" /> 
+									<input type="hidden" name='comicbook_id' value="<?php echo $comicbook_id ?>" />
+								</form>
+								
+								<?php
+								$user_select = "select role from users where user_key='" . $user_key . "'";
+								$user_result = pg_query($dbconn, $user_select);
+								$user_role = pg_fetch_row($user_result);
+								
+								if (!($user_role[0] == "1")) { ?>
+									<form action="http://localhost/main/content/reviews_unchecked.html" method=POST style="padding: 3px;">
+										<button type="submit">Рецензии без проверки</button>
+										<input type="hidden" name='user_key' value="<?php echo $user_key ?>" /> 
+										<input type="hidden" name='comicbook_id' value="<?php echo $comicbook_id ?>" />
+									</form> <?php
+								}
+								?>
+							</td>
+							<td valign="top">
+								<form method="POST" action="http://localhost/main/content/comicbook_page.html">
+									<select name="rate" style="margin: 7%" required>
+										<option value="rate" ></option>
+										<?php
+										$select = "select rates_cb.rate from rates_cb
+											inner join users on users.id = rates_cb.user_id
+											where users.user_key = '" . $user_key . "'
+											and rates_cb.comicbook=" . $comicbook_id;
+										$result = pg_query($dbconn, $select);
+										$row = pg_fetch_row($result);
+										
+										for ($i = 1; $i <=10; $i++) {
+											if ($i==$row[0]) {
+												echo "<option value=\"$i\" selected>$i</option>";
+											} else {
+												echo "<option value=\"$i\" >$i</option>";
+											}
+										}
+										?>
+									</select>
+									<input type="hidden" name='user_key' value="<?php echo "$user_key" ?>" />
+									<input type="hidden" name='comicbook_id' value="<?php echo "$comicbook_id" ?>" />
+									<input type="hidden" name='new_rate' value="Choose options" />
+									<input type="submit" name='change_rate' value="Сохранить оценку" />
+								</form>
+								<h3 >Написать рецензию:</h3>
+								<form method="POST" action="http://localhost/main/content/comicbook_page.html">
+									<input type="submit" name='add_review_button' value="Добавить ревью" />
+									<textarea name="review" cols="60" rows="7"></textarea>
+									<input type="hidden" name='user_key' value="<?php echo "$user_key" ?>" />
+									<input type="hidden" name='comicbook_id' value="<?php echo "$comicbook_id" ?>" />
+								</form>
+							</td>
+						</tr>
+					</table>
+				</td>
+				<td valign="top">
+					<?php
+					$select = "select role from users where user_key='" . $user_key . "'";
+					$result = pg_query($dbconn, $select);
+					$row = pg_fetch_row($result);
+					
+					if ($row[0] != 1) {
+					?>
+						<form action="http://localhost/main/content/tag_add.html" method=POST style="padding: 3px;">
+							<button type="submit" align="center">Добавить тег</button>
+							<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+							<input type="hidden" name='comicbook_id' value="<?php echo $comicbook_id ?>" />
+						</form>
+						<form action="http://localhost/main/content/tag_delete.html" method=POST style="padding: 3px;">
+							<button type="submit" align="center">Удалить тег</button>
+							<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+							<input type="hidden" name='comicbook_id' value="<?php echo $comicbook_id ?>" />
+						</form>
+					<?php
+					}
+					?>
+					<h2 align="center">Теги</h2>
+					<div class="block">
+						<?php
+						$select = "select tags.id, tags.name from (comics
+						inner join comics_to_tags on comics_to_tags.comicbook=comics.id)
+						inner join tags on tags.id=comics_to_tags.tag
+						where comics.id=" . $comicbook_id;
+						$result = pg_query($dbconn, $select);
+						$row = pg_fetch_row($result);
+						
+						if (!$row) {
+							echo "Здесь пока пусто :?";
+							exit;
+						}
+						
+						while ($row) {
+							?>
+							<form action="http://localhost/main/lists/lists_view.html" method=POST style="padding: 3px;">
+								<button type="submit"> <?php echo "$row[1]" ?></button>
+								<input type="hidden" name='user_key' value="<?php echo "$user_key" ?>" /> 
+								<input type="hidden" name='select' value="select comics with tag" />
+								<input type="hidden" name='tag_id' value="<?php echo "$row[0]" ?>" />
+							</form>
+							<?php
+							
+							$row = pg_fetch_row($result);
+						} ?>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
+

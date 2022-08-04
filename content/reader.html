@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+	<style>
+	.next{
+		text-align: right;
+	}
+	</style>
+	<?php
+	error_reporting(E_ERROR | E_PARSE);
+	$dbconn = pg_connect("host=localhost port=5432 dbname=comicsdb user=postgres password=qwerty1245");
+	if (!$dbconn) {
+		echo "Произошла ошибка.\n";
+		exit;
+	}
+	$comicbook_id = $_POST["comicbook_id"];
+	$page = $_POST["page"];
+	
+	$select = "select link from comics_files where comicbook=" . $comicbook_id;
+	$result = pg_query($dbconn, $select);
+	$row = pg_fetch_row($result);
+	$link = "http://localhost/main/" . $row[0] . "/" . $page . ".jpg";
+	#echo $link;
+
+	?>
+	<table>
+		<tr>
+			<td width=960>
+				<?php
+				if ($page != 1) {
+					?>
+					<form action="http://localhost/main/content/reader.html" method=POST style="padding: 3px;">
+						<button type="submit" align="center">Назад</button>
+						<input type="hidden" name='page' value="<?php $new_page = $page - 1; echo $new_page ?>" />
+						<input type="hidden" name='comicbook_id' value="<?php echo $comicbook_id ?>" />
+					</form>
+					<?php
+				}
+				?>
+			</td>
+			<td>
+				<?php
+				if ($page != $fileCount) {
+					?>
+					<form action="http://localhost/main/content/reader.html" method=POST style="padding: 3px;">
+						<button type="submit" class="next">Вперёд</button>
+						<input type="hidden" name='page' value="<?php $new_page = $page + 1; echo $new_page ?>" />
+						<input type="hidden" name='comicbook_id' value="<?php echo $comicbook_id ?>" />
+					</form>
+					<?php
+				}
+				?>
+			</td>
+		</tr>
+	</table>
+	<Img src=" <?php echo $link ?>" height="1000" style="margin-left:10%">
+</html>

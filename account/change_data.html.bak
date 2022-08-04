@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+	<?php
+		$user_key = $_POST["user_key"];
+		$dbconn = pg_connect("host=localhost port=5432 dbname=comicsdb user=postgres password=qwerty1245");
+		
+		$query = pg_query($dbconn, "SELECT * FROM users WHERE user_key LIKE '" . $user_key . "'");
+		$row = pg_fetch_row($query);
+		echo "<p>$user_key";
+		echo "<p>$row[1]";
+	?>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body class="ground">
+		<form action="update_db.php" method="POST">
+			<label>
+				Логин:<input type="text" name='new_login'>
+			</label>
+			<label>
+				Пароль:<input type="password" name='new_password'>
+			</label>
+			<button type="submit">Внести изменения</button>
+			<input type="hidden" name='user_key' value="<?php echo "$row[9]" ?>">
+		</form>
+	</body>
+</html>
+

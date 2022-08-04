@@ -1,0 +1,10 @@
+<!doctype html>
+<html>
+	<head><title>img</title></head>
+	<body>
+		<p><a href="getrequest.php/?color=1&color_text=0&type=graph&method=canvas">GET запрос</a>
+		<p><a href="postrequest.html">POST запрос</a>
+		<p><a href="account//authozisation.html">Авторизация</a>
+		<p><a href="registration//registration.html">Регистрация</a>
+	</body>
+</html>

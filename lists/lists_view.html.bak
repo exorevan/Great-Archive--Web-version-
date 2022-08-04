@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+	<?php
+		error_reporting(E_ERROR | E_PARSE);
+		$dbconn = pg_connect("host=localhost port=5432 dbname=comicsdb user=postgres password=qwerty1245");
+		if (!$dbconn) {
+			echo "Произошла ошибка.\n";
+			exit;
+		}
+		$user_key = $_POST["user_key"];
+		$select = $_POST["select"];
+		$tag = $_POST["tag_id"];
+		
+		if (isset($_POST['sort'])) {
+			
+		}
+	?>
+	<style>
+	body { background: url(images/bkgd<?php $bkdg_number = rand(1, 11); echo $bkdg_number?>.jpg); }
+	.menu {
+		margin: 5px;
+		padding: 5px;
+		display: inline-block;
+		border: 1px solid #900000;
+		box-sizing: border-box;
+	}
+	.classic {
+		display: block;
+	}
+	.values {
+		padding: 3px;
+		font-size: 13pt;
+		background: transparent;
+	}
+	</style>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body class="ground">
+		<p>
+		<ul class="menu"> 
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Издательства</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from publishers" ?>">
+			</form>
+		</ul>
+		<ul class="menu"> 
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Линейки</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from titles" ?>">
+			</form>
+		</ul>
+		<ul class="menu"> 
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Комиксы</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from comics" ?>">
+			</form>
+		</ul>
+		<ul class="menu">			
+			<form action="http://localhost/main/lists/lists_view.html" method=POST>
+			  <button type="submit">Теги</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='select' value="<?php echo "select * from tags" ?>">
+			</form>
+		</ul>
+		<ul class="menu">			
+			<form action="http://localhost/main/account//user_page.html" method=POST>
+			  <button type="submit">Профиль</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			</form>
+		</ul>
+		<ul class="menu" style="float: right;">			
+			<form action="http://localhost/main/account//authorization.html" method=POST>
+			  <button type="submit">Выйти</button>
+			</form>
+		</ul>
+		
+		<?php
+		if ($select == "select * from tags") {
+			$value_type = "tags";
+			?> <h2>Список всех тегов:</h2> <?php
+		
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				$count_result = pg_query($dbconn, "select count(*) from comics_to_tags where tag=" . $row[0]);
+				$count_row = pg_fetch_row($count_result);
+				
+				?>
+				<form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo $row[1] ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" /> 
+					<input type="hidden" name='select' value="select comics with tag" />
+					<input type="hidden" name='tag_id' value="<?php echo $row[0] ?>" />
+				</form> Количество комиксов с тегом: <?php echo "$count_row[0]" ?>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select * from comics") {
+			$value_type = "comics";
+			?> <h2>Доступные комиксы:</h2> <?php
+			$new_select = "select comics.id, titles.name, volumes.name, comics.name, comics.rate
+							from (comics
+							inner join volumes
+							on volumes.id=comics.volume)
+							inner join titles
+							on titles.id=volumes.title";
+		
+			$result = pg_query($dbconn, $new_select);
+			$row = pg_fetch_row($result);
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				?> <form action="http://localhost/main/content/comicbook_page.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1] vol $row[2] # $row[3]" ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='comicbook_id' value="<?php echo $row[0]?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select comics with tag") {
+			$value_type = "comics";
+			$new_select = "select comics.id, titles.name, volumes.name, comics.name, comics.rate, tags.name
+							from (((comics
+							inner join comics_to_tags
+							on comics_to_tags.comicbook=comics.id)
+							inner join tags
+							on tags.id=comics_to_tags.tag)
+							inner join volumes
+							on volumes.id=comics.volume)
+							inner join titles
+							on titles.id=volumes.title
+							where tags.id = " . $tag;
+			$result = pg_query($dbconn, $new_select);
+			$row = pg_fetch_row($result);
+			
+			echo "<h2>Комиксы по тегу $row[5]";
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				?> <form action="http://localhost/main/content/comicbook_page.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1] vol $row[2] # $row[3]" ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='comicbook_id' value="<?php echo $row[0] ?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select comics with person") {
+			$value_type = "comics";
+			$person_tag = $_POST["person_tag"];
+			$new_select = "select distinct comics.id, titles.name, volumes.name, comics.name, comics.rate
+						from ((creators
+						inner join comics
+						on comics.id = creators.comicbook)
+						inner join volumes
+						on volumes.id=comics.volume)
+						inner join titles
+						on titles.id=volumes.title
+						where creators.people_id = " . $person_tag;
+			$result = pg_query($dbconn, $new_select);
+			$row = pg_fetch_row($result);
+			
+			$new_select = "select * from people
+							where people.id=" . $person_tag;
+			$new_result = pg_query($dbconn, $new_select);
+			$new_row = pg_fetch_row($new_result);
+			echo "<h2>Комиксы с участием $new_row[1]&nbsp$new_row[2]";
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				?> <form action="http://localhost/main/content/comicbook_page.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1] vol $row[2] # $row[3]" ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='comicbook_id' value="<?php echo $row[0] ?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select * from publishers") {
+			$value_type = "publishers";
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			echo "<h2>Доступные издательства";
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				?> <form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1]" ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='select' value="select titles with publisher" />
+					<input type="hidden" name='publisher_id' value="<?php echo $row[0] ?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select titles with publisher") {
+			$value_type = "titles";
+			$publisher_id = $_POST["publisher_id"];
+			$select = "select * from titles where publisher=" . $publisher_id;
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			
+			$select = "select * from publishers where id=" . $publisher_id;
+			$new_result = pg_query($dbconn, $select);
+			$new_row = pg_fetch_row($new_result);
+			echo "<h2>Линейки от $new_row[1]";
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				$select = "select avg(rate) from rates_tl where title=" . $row[0];
+				$new_result = pg_query($dbconn, $select);
+				$new_row = pg_fetch_row($new_result);
+				
+				?> <form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1] (". round($new_row[0], 2) . ")" ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='select' value="select volumes with title" />
+					<input type="hidden" name='title_id' value="<?php echo $row[0] ?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select volumes with title") {
+			$value_type = "volumes";
+			$title_id = $_POST["title_id"];
+			
+			if (isset($_POST['change_rate'])) {	
+				$select = "select id from users where user_key = '" . $user_key . "'";
+				$result = pg_query($dbconn, $select);
+				$row = pg_fetch_row($result);
+				$user_id = $row[0];		
+				
+				$select = "select rates_tl.id from rates_tl
+							inner join users on users.id=rates_tl.user_id
+							where users.user_key = '" . $user_key . "'
+							and rates_tl.title=" . $title_id;
+				$result = pg_query($dbconn, $select);
+				$row = pg_fetch_row($result);
+				$new_rate = $_POST['rate'];
+				
+				if ($row) {
+					$select = "update rates_tl set rate = " . $new_rate . " from users
+						where users.user_key = '". $user_key . "'
+						and rates_tl.user_id = users.id
+						and rates_tl.title= " . $title_id;
+				} else {
+					$select = "insert into rates_tl (user_id, title, rate) values (" . $user_id . ", " . $title_id . ", " . $new_rate . ")";
+				}
+				
+				$result = pg_query($dbconn, $select);
+			}
+			?>
+			<form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 0px">
+				<select name="rate" style="margin: 1%" required>
+					<option value="rate" ></option>
+					<?php
+					$new_select = "select rates_tl.rate from rates_tl
+						inner join users on users.id = rates_tl.user_id
+						where users.user_key = '" . $user_key . "'
+						and rates_tl.title=" . $title_id;
+					$new_result = pg_query($dbconn, $new_select);
+					$new_row = pg_fetch_row($new_result);
+					
+					for ($i = 1; $i <=10; $i++) {
+						if ($i==$new_row[0]) {
+							echo "<option value=\"$i\" selected>$i</option>";
+						} else {
+							echo "<option value=\"$i\" >$i</option>";
+						}
+					}
+					?>
+				</select>
+				<?php
+				
+				?>
+				<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+				<input type="hidden" name='select' value="select volumes with title" />
+				<input type="hidden" name='title_id' value="<?php echo $title_id ?>" />
+				<input type="submit" name='change_rate' value="Сохранить оценку" />
+			</form>
+			<?php
+			$select = "select * from volumes where title=" . $title_id;
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			
+			$select = "select * from titles where id=" . $title_id;
+			$new_result = pg_query($dbconn, $select);
+			$new_row = pg_fetch_row($new_result);
+			echo "<h2>Томы $new_row[1]";
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				$select = "select avg(rate) from rates_vl where volume=" . $row[0];
+				$new_result = pg_query($dbconn, $select);
+				$new_row = pg_fetch_row($new_result);
+				
+				?> <form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1] (" . round($new_row[0], 2) . ")" ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='select' value="select comics with volume" />
+					<input type="hidden" name='title_id' value="<?php echo $row[0] ?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select comics with volume") {
+			$value_type = "comics";
+			$volume_id = $_POST["volume_id"];
+			
+			if (isset($_POST['change_rate'])) {	
+				$select = "select id from users where user_key = '" . $user_key . "'";
+				$result = pg_query($dbconn, $select);
+				$row = pg_fetch_row($result);
+				$user_id = $row[0];		
+				
+				$select = "select rates_vl.id from rates_vl
+							inner join users on users.id=rates_vl.user_id
+							where users.user_key = '" . $user_key . "'
+							and rates_vl.volume=" . $volume_id;
+				$result = pg_query($dbconn, $select);
+				$row = pg_fetch_row($result);
+				$new_rate = $_POST['rate'];
+				
+				if ($row) {
+					$select = "update rates_vl set rate = " . $new_rate . " from users
+						where users.user_key = '". $user_key . "'
+						and rates_vl.user_id = users.id
+						and rates_vl.volume= " . $volume_id;
+				} else {
+				
+					$select = "insert into rates_vl (user_id, volume, rate) values (" . $user_id . ", " . $volume_id . ", " . $new_rate . ")";
+				}
+				
+				$result = pg_query($dbconn, $select);
+			}
+
+			?>
+			<form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 0px">
+				<select name="rate" style="margin: 1%" required>
+					<option value="rate" ></option>
+					<?php
+					$new_select = "select rates_vl.rate from rates_vl
+						inner join users on users.id = rates_vl.user_id
+						where users.user_key = '" . $user_key . "'
+						and rates_vl.volume=" . $volume_id;
+					$new_result = pg_query($dbconn, $new_select);
+					$new_row = pg_fetch_row($new_result);
+					
+					for ($i = 1; $i <=10; $i++) {
+						if ($i==$new_row[0]) {
+							echo "<option value=\"$i\" selected>$i</option>";
+						} else {
+							echo "<option value=\"$i\" >$i</option>";
+						}
+					}
+					?>
+				</select>
+				<?php
+				$select = "select * from comics where volume=" . $volume_id;
+				$result = pg_query($dbconn, $select);
+				$row = pg_fetch_row($result);
+				
+				$select = "select * from volumes where id=" . $volume_id;
+				$new_result = pg_query($dbconn, $select);
+				$volume = pg_fetch_row($new_result);
+				
+				$select = "select * from titles where id=" . $volume[2];
+				$new_result = pg_query($dbconn, $select);
+				$title = pg_fetch_row($new_result);
+				?>
+				<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+				<input type="hidden" name='select' value="select comics with volume" />
+				<input type="hidden" name='volume_id' value="<?php echo $volume_id ?>" />
+				<input type="submit" name='change_rate' value="Сохранить оценку" />
+			</form>
+			<?php
+			
+			echo "<h2>Выпуски $title[1] том $volume[1]";
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				$select = "select avg(rate) from rates_cb where comicbook=" . $row[0];
+				$new_result = pg_query($dbconn, $select);
+				$new_row = pg_fetch_row($new_result);
+				
+				?> <form action="http://localhost/main/content/comicbook_page.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1] (" . round($new_row[0], 2) . ")" ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='comicbook_id' value="<?php echo $row[0] ?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		} elseif ($select == "select * from titles") {
+			$value_type = "titles";
+			$select = "select * from titles";
+			$result = pg_query($dbconn, $select);
+			$row = pg_fetch_row($result);
+			
+			echo "<h2>Линейки:";
+			
+			if (!$row) {
+				echo "Здесь пока пусто :(";
+				exit;
+			}
+			
+			while ($row) {
+				$select = "select avg(rate) from rates_tl where title=" . $row[0];
+				$new_result = pg_query($dbconn, $select);
+				$new_row = pg_fetch_row($new_result);
+				
+				?> <form action="http://localhost/main/lists/lists_view.html" method=POST style="margin: 6px">
+					<button type="submit" class="values"> <?php echo "$row[1] ". round($new_row[0], 2) ?></button>
+					<input type="hidden" name='user_key' value="<?php echo $user_key ?>" />
+					<input type="hidden" name='select' value="select volumes with title" />
+					<input type="hidden" name='title_id' value="<?php echo $row[0] ?>" />
+				</form>
+				<?php
+				
+				$row = pg_fetch_row($result);
+			}
+		}
+		
+		$new_select = "select role from users where user_key like '" . $user_key . "'";
+		$result = pg_query($dbconn, $new_select);
+		$row = pg_fetch_row($result);
+		
+		if ($row[0] == 2 or $row[0] == 3) { ?>
+			<form action="value_add.html" method=POST style="margin: 2%">
+			  <button type="submit">Добавить запись</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='type' value="<?php echo $value_type ?>">
+			</form> <?php
+		}
+		
+		if ($row[0] == 2 or $row[0] == 3) { ?>
+			<form action="value_change.html" method=POST style="margin: 2%">
+			  <button type="submit">Редактировать запись</button>
+			  <input type="hidden" name='user_key' value="<?php echo $user_key ?>">
+			  <input type="hidden" name='type' value="<?php echo $value_type ?>">
+			</form> <?php
+		}
+		?>
+		</p>
+	</body>
+</html>
+

@@ -1,0 +1,9 @@
+<!doctype html>
+<html>
+	<head><title>img</title></head>
+	<body>
+		<p align="center" style="font-size: 50px;">АРХИВ КОМИКСОВ</p>
+		<p align="center" style="font-size: 50px;"><a href="account//authorization.html">Авторизация</a>
+		<p align="center" style="font-size: 50px;"><a href="registration//registration.html">Регистрация</a>
+	</body>
+</html>

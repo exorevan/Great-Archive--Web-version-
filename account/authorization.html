@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+	<style>
+		body { background-image: url(images/bkgd<?php $bkdg_number = rand(1, 11); echo $bkdg_number?>.jpg); }
+	</style>
+	<head>
+		<meta charset="utf-8">
+		<title>POST запросы</title>
+	</head>
+	<body class="ground">
+		<form action="user_page.html" method="POST">
+			<label>
+				Логин:<input type="text" name='login'>
+			</label>
+			<label>
+				Пароль:<input type="password" name='Password'>
+			</label>
+			<input type="submit" value="Enter">
+		</form>
+		<form action="http://localhost/main/registration//registration.html" method="POST">
+			<input type="submit" value="Зарегестрироваться">
+		</form>
+	</body>
+</html>
